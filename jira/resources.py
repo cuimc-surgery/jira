@@ -246,7 +246,7 @@ class Resource(object):
         options.update({"path": path})
         return self._base_url.format(**options)
 
-    def update(self, fields=None, async_=None, jira=None, notify=True, **kwargs):
+    def update(self, fields=None, async_=None, jira=None, notify=True, security=False, **kwargs):
         """Update this resource on the server.
 
         Keyword arguments are marshalled into a dict before being sent. If this
@@ -272,11 +272,13 @@ class Resource(object):
         data.update(kwargs)
 
         data = json.dumps(data)
-
+        
+        querystring = ""
         if not notify:
-            querystring = "?notifyUsers=false"
-        else:
-            querystring = ""
+            querystring += "?notifyUsers=false"
+
+        if security:
+            querystring += "?overrideScreenSecurity=true"
 
         r = self._session.put(self.self + querystring, data=data)
         if "autofix" in self._options and r.status_code == 400:
@@ -510,7 +512,7 @@ class Issue(Resource):
             self._parse_raw(raw)
 
     def update(
-        self, fields=None, update=None, async_=None, jira=None, notify=True, **fieldargs
+        self, fields=None, update=None, async_=None, jira=None, notify=True, security=False, **fieldargs
     ):
         """Update this issue on the server.
 
@@ -563,7 +565,7 @@ class Issue(Resource):
             else:
                 fields_dict[field] = value
 
-        super(Issue, self).update(async_=async_, jira=jira, notify=notify, fields=data)
+        super(Issue, self).update(async_=async_, jira=jira, notify=notify, security=security, fields=data)
 
     def add_field_value(self, field, value):
         """Add a value to a field that supports multiple values, without resetting the existing values.
